@@ -1,0 +1,3 @@
+MTU = 1400
+CONTROL = 200
+DATA = 0

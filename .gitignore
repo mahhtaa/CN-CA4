@@ -1,0 +1,5 @@
+*.lnx
+test.py
+__pycache__
+
+
