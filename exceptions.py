@@ -1,0 +1,2 @@
+class LoopException(Exception):
+	pass
