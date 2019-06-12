@@ -25,7 +25,7 @@ class Node:
 			self.neighbors[vaddr_neighbor] = (id,vaddr_self)
 			self.link_layer.add_interface(ip, port, vaddr_neighbor, vaddr_self)
 
-		self.distance_vector = {saddr:Route(saddr,0,[]) for i,saddr in list(self.neighbors.values())}
+		self.distance_vector = {saddr:Route(saddr,0,[saddr]) for i,saddr in list(self.neighbors.values())}
 		self.dv_lock = threading.Lock()
 
 	def send_DV_to_neighbors(self):
@@ -59,8 +59,21 @@ class Node:
 					print("%s\t%s\t%s" %(DV[dest].cost, dest, loc))
 					
 
-			elif(command_words[0] ==  "down"):
-				# for naddr, in self.neighbors.items()
+			elif(command_words[0] == "down"):
+				for naddr,info in self.neighbors.items():
+					if info[0] == int(command_words[1]):
+						self.dv_lock.acquire()
+						del self.distance_vector[info[1]]
+						for dest in deepcopy(self.distance_vector):
+							if self.distance_vector[dest].next_hop == naddr:
+								del self.distance_vector[dest]
+						# send distance vector one last time before downing interface
+						packet = IPPacket(self.neighbors[naddr][1], naddr, CONTROL, deepcopy(self.distance_vector))
+						self.link_layer.send(naddr, packet)
+						self.dv_lock.release()
+						self.link_layer.down_interface(naddr)
+						break
+						
 
 			elif(command_words[0] == "up"):
 				pass
@@ -90,11 +103,21 @@ class Node:
 		self.dv_lock.acquire()
 
 		# if route included this hop and the destination is unreachable from this hop now, delete route
-		for destination in self.distance_vector:
+		for destination in deepcopy(self.distance_vector):
 			if self.distance_vector[destination].next_hop == packet.previous_hop \
-											and destination not in neighbor_dv:
+					and destination not in neighbor_dv:
 				del self.distance_vector[destination]
 
+		link_down = False
+		for destination in deepcopy(self.distance_vector):
+			if self.distance_vector[destination].next_hop == packet.previous_hop \
+					and packet.previous_hop not in neighbor_dv:
+				link_down = True
+				del self.distance_vector[destination]
+		if link_down:
+			self.dv_lock.release()
+			return
+		
 		for destination in neighbor_dv:
 			# don't update if the route includes the node itself
 			interfaces = [interface[1] for interface in self.neighbors.values()]
