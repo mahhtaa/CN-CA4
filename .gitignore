@@ -1,5 +1,6 @@
 *.lnx
 test.py
+sample.txt
 __pycache__
 
 

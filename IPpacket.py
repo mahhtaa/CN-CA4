@@ -1,10 +1,11 @@
 class IPPacket:
-	def __init__(self, saddr, daddr, protocol, data):
+	def __init__(self, saddr, daddr, protocol, data, ttl = -1):
 		self.previous_hop = None
 		self.saddr = saddr
 		self.daddr = daddr
 		self.protocol = protocol
 		self.data = data
+		self.ttl = ttl
 
 	def print_info(self, arrived_link):
 		print("\n---Node received packet!---")
