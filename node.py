@@ -91,6 +91,8 @@ class Node:
 						print("interface %d is now enabled" %info[0])
 						self.dv_lock.release()
 						break
+				if self.dv_lock.locked():
+					self.dv_lock.release()
 
 			elif(command_words[0] == "send"):
 				dest = command_words[1]
